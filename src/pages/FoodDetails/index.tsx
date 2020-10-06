@@ -73,26 +73,51 @@ const FoodDetails: React.FC = () => {
 
   useEffect(() => {
     async function loadFood(): Promise<void> {
-      // Load a specific food with extras based on routeParams id
+      const loadedFood = await api.get<Food>(`/foods/${routeParams.id}`);
+
+      setFood(loadedFood.data);
+
+      const foodExtras = loadedFood.data.extras;
+
+      const extrasWithQuantity = foodExtras.map(foodExtra => ({
+        ...foodExtra,
+        quantity: 0,
+      }));
+
+      setExtras(extrasWithQuantity);
     }
 
     loadFood();
   }, [routeParams]);
 
   function handleIncrementExtra(id: number): void {
-    // Increment extra quantity
+    const incrementedExtras = extras.map(extra =>
+      extra.id === id ? { ...extra, quantity: extra.quantity + 1 } : extra,
+    );
+
+    setExtras(incrementedExtras);
   }
 
   function handleDecrementExtra(id: number): void {
-    // Decrement extra quantity
+    const decrementedExtras = extras.map(extra =>
+      extra.id === id
+        ? {
+          ...extra,
+          quantity: extra.quantity > 0 ? extra.quantity - 1 : extra.quantity,
+        }
+        : extra,
+    );
+
+    setExtras(decrementedExtras);
   }
 
   function handleIncrementFood(): void {
-    // Increment food quantity
+    setFoodQuantity(foodQuantity + 1);
   }
 
   function handleDecrementFood(): void {
-    // Decrement food quantity
+    const quantity = foodQuantity > 1 ? foodQuantity - 1 : foodQuantity;
+    setFoodQuantity(quantity);
   }
 
   const toggleFavorite = useCallback(() => {
@@ -100,7 +125,16 @@ const FoodDetails: React.FC = () => {
   }, [isFavorite, food]);
 
   const cartTotal = useMemo(() => {
-    // Calculate cartTotal
+    const foodPrice = food.price;
+    const subtotal = foodPrice * foodQuantity;
+
+    const extrasTotal = extras.reduce((total, extra) => {
+      return total + extra.quantity * extra.value;
+    }, 0);
+
+    const total = subtotal + extrasTotal;
+
+    return formatValue(total);
   }, [extras, food, foodQuantity]);
 
   async function handleFinishOrder(): Promise<void> {
