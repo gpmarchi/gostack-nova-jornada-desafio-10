@@ -59,14 +59,19 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     async function loadFoods(): Promise<void> {
-      const apiFoods = await api.get('/foods', {
+      const apiFoods = await api.get<Food[]>('/foods', {
         params: {
           name_like: searchValue,
           category_like: selectedCategory,
         },
       });
 
-      setFoods(apiFoods.data);
+      const foodsWithFormattedPrice = apiFoods.data.map(food => ({
+        ...food,
+        formattedPrice: formatValue(food.price),
+      }));
+
+      setFoods(foodsWithFormattedPrice);
     }
 
     loadFoods();
