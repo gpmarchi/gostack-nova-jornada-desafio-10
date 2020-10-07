@@ -67,7 +67,6 @@ const FoodDetails: React.FC = () => {
   const [extras, setExtras] = useState<Extra[]>([]);
   const [isFavorite, setIsFavorite] = useState(false);
   const [foodQuantity, setFoodQuantity] = useState(1);
-  const [favoriteFoods, setFavoriteFoods] = useState<Food[]>([]);
 
   const navigation = useNavigation();
   const route = useRoute();
@@ -104,17 +103,15 @@ const FoodDetails: React.FC = () => {
 
   useEffect(() => {
     async function loadFavorites(): Promise<void> {
-      const response = await api.get<Food[]>('/favorites');
-
-      const favorites = response.data;
-
-      setFavoriteFoods(favorites);
-
       const foodId = routeParams.id;
 
-      const favoriteFood = favorites.filter(favorite => favorite.id === foodId);
+      try {
+        const favorite = await api.get<Food>(`/favorites/${foodId}`);
 
-      setIsFavorite(favoriteFood.length > 0);
+        setIsFavorite(!!favorite);
+      } catch (error) {
+        setIsFavorite(false);
+      }
     }
 
     loadFavorites();
@@ -146,37 +143,27 @@ const FoodDetails: React.FC = () => {
   }
 
   function handleDecrementFood(): void {
-    const quantity = foodQuantity > 1 ? foodQuantity - 1 : foodQuantity;
-    setFoodQuantity(quantity);
+    if (foodQuantity === 1) return;
+
+    setFoodQuantity(foodQuantity - 1);
   }
 
   const toggleFavorite = useCallback(async () => {
     setIsFavorite(!isFavorite);
 
-    let favorites;
-
     if (!isFavorite) {
-      favorites = [...favoriteFoods, food];
-
-      setFavoriteFoods(favorites);
-
       await api.post('/favorites', food);
-      return;
+    } else {
+      await api.delete(`/favorites/${food.id}`);
     }
-
-    favorites = favoriteFoods.filter(favorite => favorite.id !== food.id);
-
-    setFavoriteFoods(favorites);
-
-    await api.delete(`/favorites/${food.id}`);
-  }, [isFavorite, food, favoriteFoods]);
+  }, [isFavorite, food]);
 
   const cartTotal = useMemo(() => {
     const foodPrice = food.price;
     const subtotal = foodPrice * foodQuantity;
 
     const extrasTotal = extras.reduce((total, extra) => {
-      return total + extra.quantity * extra.value;
+      return total + extra.quantity * extra.value * foodQuantity;
     }, 0);
 
     const total = subtotal + extrasTotal;
