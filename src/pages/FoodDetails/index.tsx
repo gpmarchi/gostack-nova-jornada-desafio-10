@@ -104,7 +104,7 @@ const FoodDetails: React.FC = () => {
 
   useEffect(() => {
     async function loadFavorites(): Promise<void> {
-      const response = await api.get<FavoriteFood[]>('/favorites');
+      const response = await api.get<Food[]>('/favorites');
 
       const favorites = response.data;
 
@@ -156,13 +156,11 @@ const FoodDetails: React.FC = () => {
     let favorites;
 
     if (!isFavorite) {
-      const newFavorite = food as FavoriteFood;
-
-      favorites = [...favoriteFoods, newFavorite];
+      favorites = [...favoriteFoods, food];
 
       setFavoriteFoods(favorites);
 
-      await api.post('/favorites', newFavorite);
+      await api.post('/favorites', food);
       return;
     }
 
@@ -187,7 +185,11 @@ const FoodDetails: React.FC = () => {
   }, [extras, food, foodQuantity]);
 
   async function handleFinishOrder(): Promise<void> {
-    // Finish the order and save on the API
+    const order = { ...food, extras };
+
+    await api.post('/orders', order);
+
+    navigation.navigate('Orders');
   }
 
   // Calculate the correct icon name
