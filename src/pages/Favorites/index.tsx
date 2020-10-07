@@ -27,14 +27,12 @@ interface Food {
   formattedPrice: string;
 }
 
-type Favorite = Omit<Food, 'formattedPrice'>;
-
 const Favorites: React.FC = () => {
   const [favorites, setFavorites] = useState<Food[]>([]);
 
   useEffect(() => {
     async function loadFavorites(): Promise<void> {
-      const apiFavorites = await api.get<Favorite[]>('/favorites');
+      const apiFavorites = await api.get<Food[]>('/favorites');
 
       const favoritesWithFormattedPrice = apiFavorites.data.map(favorite => ({
         ...favorite,
